@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.app/railway-schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pip install -r artifacts/trading-agent/requirements.txt"
+  },
+  "deploy": {
+    "startCommand": "python artifacts/trading-agent/main.py",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 5
+  }
+}
