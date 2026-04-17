@@ -3,14 +3,16 @@ config.py — Central configuration for the AI Trading Agent.
 Change any setting here without touching the main code.
 """
 
+import os
+
 # ─── Deriv API ───────────────────────────────────────────────────────────────
 DERIV_APP_ID = "1089"
 DERIV_WS_URL = f"wss://ws.derivws.com/websockets/v3?app_id={DERIV_APP_ID}"
-API_TOKEN = "iKtGIhDi6Vb9LA3"   # Demo token — replace for live account
-ACCOUNT_ID = "VRW1678235"
+API_TOKEN  = os.environ.get("DERIV_API_TOKEN",  "iKtGIhDi6Vb9LA3")   # Demo token fallback
+ACCOUNT_ID = os.environ.get("DERIV_ACCOUNT_ID", "VRW1678235")
 
-# Set DEMO_MODE = False and update API_TOKEN to switch to a real account
-DEMO_MODE = True
+# Set DEMO_MODE env var to "false" / "0" to switch to a real account
+DEMO_MODE = os.environ.get("DEMO_MODE", "True").strip().lower() not in ("false", "0", "no")
 
 # ─── Trading Pairs ───────────────────────────────────────────────────────────
 FOREX_PAIRS = ["frxEURUSD", "frxGBPUSD", "frxUSDJPY"]
