@@ -96,19 +96,11 @@ class TradingAgent:
     async def _on_new_candle(self, pair: str, timeframe: int, df: pd.DataFrame):
         """
         Called every time a new OHLCV candle closes on any subscribed pair/timeframe.
-        Only act when BOTH the 5m AND 15m candles have refreshed for a pair.
+        Triggers analysis on every 5m candle close — 15m data is already in memory.
         """
-        self._pending_analysis.add((pair, timeframe))
-
-        # We need both timeframes to have updated before analysing
-        if (pair, TIMEFRAME_5M) not in self._pending_analysis:
+        # Only trigger full analysis on 5m candle closes (every 5 minutes)
+        if timeframe != TIMEFRAME_5M:
             return
-        if (pair, TIMEFRAME_15M) not in self._pending_analysis:
-            return
-
-        # Remove from pending and run analysis
-        self._pending_analysis.discard((pair, TIMEFRAME_5M))
-        self._pending_analysis.discard((pair, TIMEFRAME_15M))
 
         await self._analyse_pair(pair)
 
