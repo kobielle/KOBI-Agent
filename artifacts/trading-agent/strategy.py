@@ -136,18 +136,22 @@ class StrategyEngine:
         ema_slow     = row["ema_slow"]
         macd         = row["macd"]
         macd_signal  = row["macd_signal"]
-        cross_up     = bool(row["macd_cross_up"])
-        cross_down   = bool(row["macd_cross_down"])
+
+        # Accept crossover on the current candle OR within the last 3 candles (15-min window)
+        recent_cross_up   = bool(df["macd_cross_up"].iloc[-4:-1].any())
+        recent_cross_down = bool(df["macd_cross_down"].iloc[-4:-1].any())
+        macd_bullish      = macd > macd_signal   # MACD momentum still positive
+        macd_bearish      = macd < macd_signal   # MACD momentum still negative
 
         # ── BUY conditions ──────────────────────────────────────────────────
         # 1. EMA 20 > EMA 50  (uptrend)
         # 2. RSI between 40 and 70 (momentum — not overbought)
-        # 3. MACD line just crossed above the signal line
+        # 3. MACD crossed above signal within last 3 candles AND still bullish
         # 4. Current price is above EMA 20
         if (
             ema_fast > ema_slow
             and 40 <= rsi <= 70
-            and cross_up
+            and recent_cross_up and macd_bullish
             and price > ema_fast
         ):
             return "BUY"
@@ -155,12 +159,12 @@ class StrategyEngine:
         # ── SELL conditions ─────────────────────────────────────────────────
         # 1. EMA 20 < EMA 50  (downtrend)
         # 2. RSI between 30 and 60 (momentum — not oversold)
-        # 3. MACD line just crossed below the signal line
+        # 3. MACD crossed below signal within last 3 candles AND still bearish
         # 4. Current price is below EMA 20
         if (
             ema_fast < ema_slow
             and 30 <= rsi <= 60
-            and cross_down
+            and recent_cross_down and macd_bearish
             and price < ema_fast
         ):
             return "SELL"
