@@ -33,7 +33,7 @@ TIMEFRAME_15M = 900     # 15-minute candles
 HISTORICAL_CANDLES = 200  # How many historical candles to fetch
 
 # ─── AI Decision Layer ───────────────────────────────────────────────────────
-CONFIDENCE_THRESHOLD = 70   # Minimum score (0-100) required to enter a trade
+CONFIDENCE_THRESHOLD = 55   # Minimum score (0-100) required to enter a trade
 ATR_HIGH_MULT = 2.0         # ATR multiplier above which volatility is "too high"
 ATR_LOW_MULT = 0.3          # ATR multiplier below which volatility is "too low"
 
@@ -65,6 +65,8 @@ MIN_WIN_RATE = 0.45            # Below 45% → cut size by 50%
 HIGH_WIN_RATE = 0.65           # Above 65% → increase size 10%
 
 # ─── Trading Sessions (UTC hours) ────────────────────────────────────────────
+ASIAN_OPEN_UTC = 0      # 00:00 UTC (Tokyo/Asian session open)
+ASIAN_CLOSE_UTC = 9     # 09:00 UTC (Asian session close)
 LONDON_OPEN_UTC = 8     # 08:00 UTC
 LONDON_CLOSE_UTC = 17   # 17:00 UTC
 NY_OPEN_UTC = 13        # 13:00 UTC
@@ -89,5 +91,5 @@ TELEGRAM_CHAT_ID = "YOUR_CHAT_ID_HERE"        # Replace to activate
 TELEGRAM_ENABLED = False  # Set True after filling in above credentials
 
 # ─── Deriv Multiplier Settings ───────────────────────────────────────────────
-MULTIPLIER_VALUE = 10      # Leverage multiplier for contracts
+MULTIPLIER_VALUE = 100     # Leverage multiplier — Deriv forex accepts: 100,200,300,500,800
 CONTRACT_DURATION = None   # None = open-ended multiplier contract
