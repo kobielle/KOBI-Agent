@@ -13,6 +13,8 @@ import pandas as pd
 from config import (
     TIMEFRAME_5M,
     TIMEFRAME_15M,
+    ASIAN_OPEN_UTC,
+    ASIAN_CLOSE_UTC,
     LONDON_OPEN_UTC,
     LONDON_CLOSE_UTC,
     NY_OPEN_UTC,
@@ -42,19 +44,22 @@ class StrategyEngine:
     def is_high_probability_session(self) -> tuple[bool, str]:
         """
         Return (is_active, session_name).
-        Priority: London/NY overlap → pure London → pure NY → nothing.
+        Priority: London/NY overlap → pure London → pure NY → Asian → nothing.
         Outside sessions or within buffer windows → not active.
         """
         hour, minute = self.get_current_utc_hour_minute()
         total_minutes = hour * 60 + minute
 
+        asian_open_m   = ASIAN_OPEN_UTC * 60 + SESSION_BUFFER_MINUTES
+        asian_close_m  = ASIAN_CLOSE_UTC * 60 - SESSION_BUFFER_MINUTES
         london_open_m  = LONDON_OPEN_UTC * 60 + SESSION_BUFFER_MINUTES
         london_close_m = LONDON_CLOSE_UTC * 60 - SESSION_BUFFER_MINUTES
         ny_open_m      = NY_OPEN_UTC * 60 + SESSION_BUFFER_MINUTES
         ny_close_m     = NY_CLOSE_UTC * 60 - SESSION_BUFFER_MINUTES
 
+        in_asian  = asian_open_m  <= total_minutes <= asian_close_m
         in_london = london_open_m <= total_minutes <= london_close_m
-        in_ny     = ny_open_m    <= total_minutes <= ny_close_m
+        in_ny     = ny_open_m     <= total_minutes <= ny_close_m
 
         if in_london and in_ny:
             return True, "London/NY Overlap (HIGHEST PRIORITY)"
@@ -62,8 +67,10 @@ class StrategyEngine:
             return True, "London Session"
         elif in_ny:
             return True, "New York Session"
+        elif in_asian:
+            return True, "Asian Session (Tokyo)"
         else:
-            return False, "Off-session (Tokyo/Sydney)"
+            return False, "Off-session"
 
     def should_trade_now(self, pair: str) -> tuple[bool, str]:
         """
@@ -89,21 +96,22 @@ class StrategyEngine:
         current_price: float,
     ) -> Optional[str]:
         """
-        Evaluate BUY/SELL/None for a pair using both timeframes.
-        Both timeframes must agree before a signal is returned.
+        Evaluate BUY/SELL/None for a pair.
+        Either timeframe confirming is sufficient — only skip if they conflict.
         """
         signal_5m  = self._check_direction(df_5m,  current_price)
         signal_15m = self._check_direction(df_15m, current_price)
 
-        if signal_5m is None or signal_15m is None:
-            notify_skipped_trade(pair, f"No clear signal (5m={signal_5m}, 15m={signal_15m})")
-            return None
-
-        if signal_5m != signal_15m:
+        # Hard conflict — one says BUY, other says SELL — skip
+        if signal_5m is not None and signal_15m is not None and signal_5m != signal_15m:
             notify_skipped_trade(pair, f"Timeframe conflict (5m={signal_5m}, 15m={signal_15m})")
             return None
 
-        return signal_5m
+        # Accept whichever timeframe has a signal (prefer 15m if both agree)
+        signal = signal_15m or signal_5m
+        if signal is None:
+            notify_skipped_trade(pair, f"No clear signal on either timeframe")
+        return signal
 
     def _check_direction(self, df: pd.DataFrame, price: float) -> Optional[str]:
         """
@@ -133,12 +141,12 @@ class StrategyEngine:
 
         # ── BUY conditions ──────────────────────────────────────────────────
         # 1. EMA 20 > EMA 50  (uptrend)
-        # 2. RSI between 45 and 65 (momentum — not overbought)
+        # 2. RSI between 40 and 70 (momentum — not overbought)
         # 3. MACD line just crossed above the signal line
         # 4. Current price is above EMA 20
         if (
             ema_fast > ema_slow
-            and 45 <= rsi <= 65
+            and 40 <= rsi <= 70
             and cross_up
             and price > ema_fast
         ):
@@ -146,12 +154,12 @@ class StrategyEngine:
 
         # ── SELL conditions ─────────────────────────────────────────────────
         # 1. EMA 20 < EMA 50  (downtrend)
-        # 2. RSI between 35 and 55 (momentum — not oversold)
+        # 2. RSI between 30 and 60 (momentum — not oversold)
         # 3. MACD line just crossed below the signal line
         # 4. Current price is below EMA 20
         if (
             ema_fast < ema_slow
-            and 35 <= rsi <= 55
+            and 30 <= rsi <= 60
             and cross_down
             and price < ema_fast
         ):
