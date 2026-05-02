@@ -8,8 +8,8 @@ import os
 # ─── Deriv API ───────────────────────────────────────────────────────────────
 DERIV_APP_ID = "1089"
 DERIV_WS_URL = f"wss://ws.derivws.com/websockets/v3?app_id={DERIV_APP_ID}"
-API_TOKEN  = os.environ.get("DERIV_API_TOKEN",  "iKtGIhDi6Vb9LA3")   # Demo token fallback
-ACCOUNT_ID = os.environ.get("DERIV_ACCOUNT_ID", "VRW1678235")
+API_TOKEN  = os.environ.get("DERIV_API_TOKEN",  "31IbuQDHej4Mqx9")   # Virtual trading account token
+ACCOUNT_ID = os.environ.get("DERIV_ACCOUNT_ID", "VRTC15353378")
 
 # Set DEMO_MODE env var to "false" / "0" to switch to a real account
 DEMO_MODE = os.environ.get("DEMO_MODE", "True").strip().lower() not in ("false", "0", "no")
